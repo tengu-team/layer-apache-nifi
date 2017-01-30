@@ -35,5 +35,5 @@ resources:
         type: file
         filename: apache-nifi.tar.gz
         description: |
-            url http://www-us.apache.org/dist/nifi/1.0.0/nifi-1.0.0-bin.tar.gz
-series: ['trusty']
+            url https://www.apache.org/dyn/closer.lua?path=/nifi/1.1.1/nifi-1.1.1-source-release.zip
+series: ['trusty', 'xenial']

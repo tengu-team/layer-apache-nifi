@@ -13,7 +13,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # pylint: disable=C0111, C0301
-
 import subprocess
 import tarfile
 
@@ -33,10 +32,10 @@ def install_apache_nifi():
     tfile = tarfile.open(hookenv.resource_get('apache-nifi'), 'r')
     filesdir = '{}/files'.format(hookenv.charm_dir())
     tfile.extractall(filesdir)
-    re_edit_in_place('{}/nifi-1.0.0/conf/nif2i.properties'.format(filesdir), {
+    re_edit_in_place('{}/nifi-1.1.1/conf/nifi.properties'.format(filesdir), {
         r'.*nifi.web.http.port.*': 'nifi.web.http.port={}'.format(conf['nifi-port']),
     })
-    subprocess.check_call(['bash', '{}/nifi-1.0.0/bin/nifi.sh'.format(filesdir), 'install'])
+    subprocess.check_call(['bash', '{}/nifi-1.1.1/bin/nifi.sh'.format(filesdir), 'install'])
     if service_restart('nifi'):
         hookenv.open_port(conf['nifi-port'])
         hookenv.status_set('active', 'Running: standalone mode')
@@ -60,13 +59,14 @@ def zookeeper_config(zookeeper):
     zookeeper_servers_string = ''
     for zk_unit in zookeeper.zookeepers():
         zookeeper_servers_string += '{}:{},'.format(zk_unit['host'], zk_unit['port'])
-    re_edit_in_place('%s/files/nifi-1.0.0/conf/nifi.properties' % hookenv.charm_dir(), {
+    re_edit_in_place('%s/files/nifi-1.1.1/conf/nifi.properties' % hookenv.charm_dir(), {
         r'.*nifi.cluster.is.node.*': 'nifi.cluster.is.node=true',
         r'.*nifi.cluster.node.address.*': 'nifi.cluster.node.address={}'.format(hookenv.unit_public_ip()),
         r'.*nifi.web.http.port.*': 'nifi.web.http.port={}'.format(conf['nifi-port']),
         r'.*nifi.cluster.node.protocol.port.*': 'nifi.cluster.node.protocol.port={}'.format(conf['cluster-port']),
         r'.*nifi.zookeeper.connect.string.*': 'nifi.zookeeper.connect.string={}'.format(zookeeper_servers_string)
     })
+    hookenv.open_port(conf['cluster-port'])
     if service_restart('nifi'):
         set_state('apache-nifi.cluster')
         hookenv.status_set('active', 'Running: cluster mode with Zookeeper')
@@ -81,9 +81,9 @@ def zookeeper_changed(zookeeper):
     filesdir = '{}/files'.format(hookenv.charm_dir())
     for zk_unit in zookeeper.zookeepers():
         zookeeper_servers_string += '{}:{},'.format(zk_unit['host'], zk_unit['port'])
-    if zookeeper_servers_string[:-1] not in open('{}/nifi-1.0.0/conf/nifi.properties'.format(filesdir)).read():
+    if zookeeper_servers_string[:-1] not in open('{}/nifi-1.1.1/conf/nifi.properties'.format(filesdir)).read():
         hookenv.status_set('maintenance', 'Zookeeper has changed. Updating Apache NiFi settings and restarting')
-        re_edit_in_place('{}/nifi-1.0.0/conf/nifi.properties'.format(filesdir), {
+        re_edit_in_place('{}/nifi-1.1.1/conf/nifi.properties'.format(filesdir), {
             r'.*nifi.zookeeper.connect.string.*': 'nifi.zookeeper.connect.string={}'.format(zookeeper_servers_string[:-1])
         })
         if service_restart('nifi'):
@@ -96,11 +96,12 @@ def zookeeper_changed(zookeeper):
 @when_not('zookeeper.joined', 'zookeeper.ready')
 def zookeeper_removed():
     hookenv.status_set('maintenance', 'Removing Apache NiFi from cluster')
-    re_edit_in_place('{}/files/nifi-1.0.0/conf/nifi.properties'.format(hookenv.charm_dir()), {
+    re_edit_in_place('{}/files/nifi-1.1.1/conf/nifi.properties'.format(hookenv.charm_dir()), {
         r'.*nifi.cluster.is.node.*': 'nifi.cluster.is.node=false'
     })
-    if service_stop('nifi'):
+    hookenv.close_port(hookenv.config()['cluster-port'])
+    if service_restart('nifi'):
         remove_state('apache-nifi.cluster')
-        hookenv.status_set('waiting', 'Stopped: see README.md')
+        hookenv.status_set('active', 'Running: standalone mode')
     else:
-        hookenv.status_set('error', 'Failed to stop')
+        hookenv.status_set('error', 'Failed to restart')
