@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # Copyright (C) 2016  Qrama
 #
 # This program is free software: you can redistribute it and/or modify
@@ -12,13 +13,12 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-# pylint: disable=C0111, C0301
 import subprocess
 import tarfile
 
 from charms.reactive import when, when_all, when_not, set_state, remove_state
 from charmhelpers.core import hookenv
-from charmhelpers.core.host import service_restart, service_stop
+from charmhelpers.core.host import service_restart
 
 from jujubigdata.utils import re_edit_in_place
 
@@ -46,7 +46,7 @@ def install_apache_nifi():
 
 @when_all('zookeeper.joined', 'apache-nifi.installed')
 @when_not('zookeeper.ready')
-def zookeeper_wait(zookeeper):
+def zookeeper_wait(zookeeper):  # pylint:disable=W0613
     hookenv.status_set('waiting', 'Waiting for Zookeeper to become available')
 
 
