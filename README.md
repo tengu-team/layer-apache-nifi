@@ -44,7 +44,7 @@ All other configuration options have to be set manually in the Apache NiFi confi
 
 # Bugs
 
-Report bugs on [the Apache NiFi layer Github repository](https://github.com/IBCNServices/layer-Apache-NiFi/issues)
+Report bugs on [the Apache NiFi layer Github repository](https://github.com/tengu-team/layer-apache-nifi/issues)
 
 # Author
 
