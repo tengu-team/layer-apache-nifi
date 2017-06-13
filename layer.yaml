@@ -1,2 +1,2 @@
-includes: ['layer:basic', 'layer:java', 'interface:http', 'interface:zookeeper']
+includes: ['layer:basic', 'layer:java', 'layer:metrics', 'interface:http', 'interface:zookeeper']
 repo: git@github.com:Qrama/layer-Apache-NiFi.git

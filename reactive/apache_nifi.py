@@ -32,15 +32,15 @@ def install_apache_nifi():
     tfile = tarfile.open(hookenv.resource_get('apache-nifi'), 'r')
     filesdir = '{}/files'.format(hookenv.charm_dir())
     tfile.extractall(filesdir)
-    re_edit_in_place('{}/nifi-1.1.1/conf/nifi.properties'.format(filesdir), {
+    re_edit_in_place('{}/nifi-1.3.0/conf/nifi.properties'.format(filesdir), {
         r'.*nifi.web.http.port.*': 'nifi.web.http.port={}'.format(conf['nifi-port']),
     })
     subprocess.check_call(['bash',
-                           '{}/nifi-1.1.1/bin/nifi.sh'.format(filesdir),
+                           '{}/nifi-1.3.0/bin/nifi.sh'.format(filesdir),
                            'install'])
     try:
         subprocess.check_call(['bash',
-                               '{}/nifi-1.1.1/bin/nifi.sh'.format(filesdir),
+                               '{}/nifi-1.3.0/bin/nifi.sh'.format(filesdir),
                                'start'])
         hookenv.open_port(conf['nifi-port'])
         hookenv.status_set('active', 'Running: standalone mode')
@@ -66,7 +66,7 @@ def zookeeper_config(zookeeper):
     zookeeper_servers_string = ''
     for zk_unit in zookeeper.zookeepers():
         zookeeper_servers_string += '{}:{},'.format(zk_unit['host'], zk_unit['port'])
-    re_edit_in_place('%s/files/nifi-1.1.1/conf/nifi.properties' % hookenv.charm_dir(), {
+    re_edit_in_place('%s/files/nifi-1.3.0/conf/nifi.properties' % hookenv.charm_dir(), {
         r'.*nifi.cluster.is.node.*': 'nifi.cluster.is.node=true',
         r'.*nifi.cluster.node.address.*': 'nifi.cluster.node.address={}'.format(hookenv.unit_private_ip()),
         r'.*nifi.web.http.port.*': 'nifi.web.http.port={}'.format(conf['nifi-port']),
@@ -77,7 +77,7 @@ def zookeeper_config(zookeeper):
     filesdir = '{}/files'.format(hookenv.charm_dir())
     try:
         subprocess.check_call(['bash',
-                               '{}/nifi-1.1.1/bin/nifi.sh'.format(filesdir),
+                               '{}/nifi-1.3.0/bin/nifi.sh'.format(filesdir),
                                'restart'])
         hookenv.status_set('active', 'Running: cluster mode with Zookeeper')
         set_state('apache-nifi.cluster')
@@ -92,15 +92,15 @@ def zookeeper_changed(zookeeper):
     filesdir = '{}/files'.format(hookenv.charm_dir())
     for zk_unit in zookeeper.zookeepers():
         zookeeper_servers_string += '{}:{},'.format(zk_unit['host'], zk_unit['port'])
-    if zookeeper_servers_string[:-1] not in open('{}/nifi-1.1.1/conf/nifi.properties'.format(filesdir)).read():
+    if zookeeper_servers_string[:-1] not in open('{}/nifi-1.3.0/conf/nifi.properties'.format(filesdir)).read():
         hookenv.status_set('maintenance',
                            'Zookeeper has changed. Updating Apache NiFi settings and restarting')
-        re_edit_in_place('{}/nifi-1.1.1/conf/nifi.properties'.format(filesdir), {
+        re_edit_in_place('{}/nifi-1.3.0/conf/nifi.properties'.format(filesdir), {
             r'.*nifi.zookeeper.connect.string.*': 'nifi.zookeeper.connect.string={}'.format(zookeeper_servers_string[:-1])
         })
         try:
             subprocess.check_call(['bash',
-                                   '{}/nifi-1.1.1/bin/nifi.sh'.format(filesdir),
+                                   '{}/nifi-1.3.0/bin/nifi.sh'.format(filesdir),
                                    'restart'])
             hookenv.status_set('active', 'Running: cluster mode with Zookeeper')
             set_state('apache-nifi.cluster')
@@ -113,13 +113,13 @@ def zookeeper_changed(zookeeper):
 def zookeeper_removed():
     filesdir = '{}/files'.format(hookenv.charm_dir())
     hookenv.status_set('maintenance', 'Removing Apache NiFi from cluster')
-    re_edit_in_place('{}/files/nifi-1.1.1/conf/nifi.properties'.format(hookenv.charm_dir()), {
+    re_edit_in_place('{}/files/nifi-1.3.0/conf/nifi.properties'.format(hookenv.charm_dir()), {
         r'.*nifi.cluster.is.node.*': 'nifi.cluster.is.node=false'
     })
     hookenv.close_port(hookenv.config()['cluster-port'])
     try:
         subprocess.check_call(['bash',
-                               '{}/nifi-1.1.1/bin/nifi.sh'.format(filesdir),
+                               '{}/nifi-1.3.0/bin/nifi.sh'.format(filesdir),
                                'restart'])
         hookenv.status_set('active', 'Running: standalone mode')
         set_state('apache-nifi.installed')
